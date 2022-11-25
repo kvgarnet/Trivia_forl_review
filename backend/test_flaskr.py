@@ -78,7 +78,7 @@ DB_USER,DB_PASSWORD, "localhost:5432", self.database_name)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
         self.assertTrue(data['questions'])
-        self.assertEqual(data['current_category'],6)
+        self.assertEqual(data['current_category'],'6')
         self.assertEqual(data['total_questions'], 2)
 
     def test_get_questions_category_not_found(self):

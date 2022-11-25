@@ -1,4 +1,6 @@
-import os,json
+import os, json
+import sys
+
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -8,9 +10,11 @@ from sqlalchemy import and_
 from models import setup_db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
-def paginate_display(request,queries):
+
+
+def paginate_display(request, queries):
     formatted_display = [query.format() for query in queries]
-    #set default value if param "page" NOT sent via request's args
+    # set default value if param "page" NOT sent via request's args
     page = request.args.get("page", 1, type=int)
     # if "page' sent via request args , display paginated
     if request.args.get("page"):
@@ -19,14 +23,18 @@ def paginate_display(request,queries):
         return formatted_display[start:end]
     # else,display all
     return formatted_display
-#embed current_category type in each question
+
+
+# embed current_category type in each question
 def get_current_category(queries):
-    current_category_question_lst=[]
+    current_category_question_lst = []
     for q in queries:
         q['current_category'] = Category.query.get(q.get('category')).type
         current_category_question_lst.append(q)
     return current_category_question_lst
-#format categories output based on frontend requirement
+
+
+# format categories output based on frontend requirement
 def format_categories(queries):
     format_category = {}
     for c in queries:
@@ -42,9 +50,9 @@ def create_app(test_config=None):
     """
     @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
     """
-    #basic, enable every URL to allow CORS
+    # basic, enable every URL to allow CORS
     # CORS(app)
-    #enable CORS for specific api,we alllow all (/*)
+    # enable CORS for specific api,we alllow all (/*)
     cors = CORS(app, resources={r"/*": {"origins": "*"}})
     """
     @TODO: Use the after_request decorator to set Access-Control-Allow
@@ -94,6 +102,7 @@ def create_app(test_config=None):
     ten questions per page and pagination at the bottom of the screen for three pages.
     Clicking on the page numbers should update the questions.
     """
+
     # currentCategory for this endpoint can be None for all questions
     # https: // knowledge.udacity.com / questions / 82424
 
@@ -128,6 +137,7 @@ def create_app(test_config=None):
     TEST: When you click the trash icon next to a question, the question will be removed.
     This removal will persist in the database and when you refresh the page.
     """
+
     @app.route('/questions/<question_id>', methods=['DELETE'])
     def delete_question(question_id):
         error = False
@@ -152,7 +162,6 @@ def create_app(test_config=None):
             return abort(422)
         finally:
             question.close()
-
 
     """
     @TODO:
@@ -183,7 +192,7 @@ def create_app(test_config=None):
                 category=category)
             question.insert()
             questions = Question.query.order_by('id').all()
-            questions_page_lst = paginate_display(request,questions)
+            questions_page_lst = paginate_display(request, questions)
             total_questions = len(Question.query.all())
             return jsonify({
                 'success': True,
@@ -234,7 +243,7 @@ def create_app(test_config=None):
     category to be shown.
     """
 
-    @app.route('/categories/<int:category_id>/questions', methods=['GET'])
+    @app.route('/categories/<string:category_id>/questions', methods=['GET'])
     def get_questions_per_category(category_id):
         print(f"cat id:{category_id}")
         questions = Question.query.order_by(Question.id).filter(Question.category == category_id).all()
@@ -243,11 +252,11 @@ def create_app(test_config=None):
             abort(404)
         questions_page_lst = paginate_display(request, questions)
         return jsonify({
-                        "success": True,
-                        "questions": questions_page_lst,
-                        "total_questions": len(questions_page_lst),
-                        'current_category': category_id
-                        })
+            "success": True,
+            "questions": questions_page_lst,
+            "total_questions": len(questions_page_lst),
+            'current_category': category_id
+        })
 
     """
     @TODO:
@@ -274,10 +283,11 @@ def create_app(test_config=None):
             questions = Question.query.order_by(Question.id).filter(Question.id.notin_(previous_questions)).all()
         else:
             # questions = Question.query.order_by(Question.id).filter_by(category = str((category['id'])))\
-                    # .filter(Question.id.notin_(previous_questions)).all()
-            questions = Question.query.order_by(Question.id).filter(and_(Question.category ==  str((category['id'])),Question.id.notin_(previous_questions))).all()
+            # .filter(Question.id.notin_(previous_questions)).all()
+            questions = Question.query.order_by(Question.id).filter(
+                and_(Question.category == str((category['id'])), Question.id.notin_(previous_questions))).all()
         # print(f"questions is {questions}")
-        quiz_question=random.choice(questions).format() if questions else None
+        quiz_question = random.choice(questions).format() if questions else None
         return jsonify({"question": quiz_question,
                         "success": True
                         })
@@ -303,6 +313,7 @@ def create_app(test_config=None):
             "error": 404,
             "message": "Resource Not Found"
         }), 404
+
     @app.errorhandler(405)
     def method_not_allowed(error):
         return jsonify(
@@ -311,7 +322,8 @@ def create_app(test_config=None):
                 'error': 405,
                 'message': "Method not allowed"
             }
-        ),405
+        ), 405
+
     @app.errorhandler(422)
     def error_unprocessable(error):
         return jsonify({
@@ -329,4 +341,3 @@ def create_app(test_config=None):
         }), 500
 
     return app
-
